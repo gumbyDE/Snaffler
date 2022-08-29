@@ -11,24 +11,33 @@ namespace SnaffCore.Database
 {
     public class MssqlDatabaseHandler : DatabaseHandler
     {
-        private const string _sqlCreateShareTable = @"
+        private const string _sqlCreateSharesTable = @"
+            IF OBJECT_ID(N'dbo.shares', N'U') IS NULL
             CREATE TABLE shares (
-                pk_column data_type PRIMARY KEY,
-                column_1 data_type NOT NULL,
-                column_2 data_type,
-                ...,
-                table_constraints
+	            computer varchar(500) NULL,
+	            sharename varchar(500) NULL,
+	            comment varchar(200) NULL
+            );
+        ";
+
+        private const string _sqlCreateFilesTable = @"
+            IF OBJECT_ID(N'dbo.files', N'U') IS NULL
+            CREATE TABLE files (
+	            fullname varchar(500) NULL,
+	            filename varchar(500) NULL,
+	            size int NULL,
+	            extension varchar(100) NULL
             );
         ";
 
         private const string _sqlInsertShare = @"
-            INSERT INTO shares (computer, path, comment)
-            VALUES (@computer, @path, @comment)
+            INSERT INTO shares (computer, sharename, comment)
+            VALUES (@computer, @sharename, @comment);
         ";
 
         private const string _sqlInsertFile = @"
             INSERT INTO files (fullname, filename, size, extension)
-            VALUES (@fullname, @filename, @size, @extension)
+            VALUES (@fullname, @filename, @size, @extension);
         ";
 
         private readonly string _connectionString;
@@ -72,6 +81,22 @@ namespace SnaffCore.Database
             }
 
             _connectionString = connectionStringBuilder.ToString();
+
+            InitializeDatabase();
+        }
+
+        private void InitializeDatabase()
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                SqlCommand commandShares = connection.CreateCommand();
+                SqlCommand commandFiles = connection.CreateCommand();
+                commandShares.CommandText = _sqlCreateSharesTable;
+                commandFiles.CommandText = _sqlCreateFilesTable;
+                commandShares.ExecuteNonQuery();
+                commandFiles.ExecuteNonQuery();
+            }
         }
 
         public override bool CheckConnection()
@@ -162,8 +187,11 @@ namespace SnaffCore.Database
 
                         command.CommandText = _sqlInsertShare;
 
+                        string shareName = currentShare.SharePath
+                            .TrimStart('\\')
+                            .Substring(currentShare.Computer.Length + 1);
                         command.Parameters.AddWithValue("@computer", currentShare.Computer);
-                        command.Parameters.AddWithValue("@path", currentShare.SharePath);
+                        command.Parameters.AddWithValue("@sharename", shareName);
                         command.Parameters.AddWithValue("@comment", currentShare.ShareComment);
 
                         command.ExecuteNonQuery();
