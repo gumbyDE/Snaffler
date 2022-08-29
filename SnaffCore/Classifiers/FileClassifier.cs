@@ -378,7 +378,7 @@ namespace SnaffCore.Classifiers
                 File.OpenRead(fileInfo.FullName);
                 this.RwStatus = new RwStatus() { CanRead = true, CanModify = false, CanWrite = false };
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 this.RwStatus = new RwStatus() { CanModify = false, CanRead = false, CanWrite = false };
             }

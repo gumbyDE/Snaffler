@@ -195,9 +195,13 @@ namespace Snaffler
                     parsedConfig.MaxThreads = maxThreadsArg.Value;
                 }
 
-                parsedConfig.ShareThreads = parsedConfig.MaxThreads / 3;
-                parsedConfig.FileThreads = parsedConfig.MaxThreads / 3;
-                parsedConfig.TreeThreads = parsedConfig.MaxThreads / 3;
+                // distribute threads equally for share, file and tree threads
+                int calculatedThreads = (int)Math.Floor((decimal)(parsedConfig.MaxThreads / 3));
+                parsedConfig.ShareThreads = Math.Max(calculatedThreads -1, 1);
+                parsedConfig.FileThreads = Math.Max(calculatedThreads -1, 1);
+                parsedConfig.TreeThreads = Math.Max(calculatedThreads -1, 1);
+                // if any threads are left to distribute use those, otherwise only spawn one
+                parsedConfig.DatabaseThreads = Math.Max(parsedConfig.MaxThreads - parsedConfig.ShareThreads - parsedConfig.FileThreads - parsedConfig.TreeThreads, 1);
 
                 if (tsvArg.Parsed)
                 {

@@ -211,7 +211,7 @@ namespace SnaffCore.ActiveDirectory
                                 continue;
                             }
                         }
-                        catch (Exception e)
+                        catch (Exception)
                         {
                             Mq.Error("Error calculating lastLogonTimeStamp for computer account " + resEnt.DistinguishedName);
                         }

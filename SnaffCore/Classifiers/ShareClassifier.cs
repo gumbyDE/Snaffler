@@ -73,6 +73,7 @@ namespace SnaffCore.Classifiers
     {
         public bool Snaffle { get; set; }
         public bool ScanShare { get; set; }
+        public string Computer { get; set;}
         public string SharePath { get; set; }
         public string ShareComment { get; set; }
         public bool Listable { get; set; }

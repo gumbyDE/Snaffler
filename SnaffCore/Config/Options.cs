@@ -36,9 +36,11 @@ namespace SnaffCore.Config
         public int ShareThreads { get; set; }
         public int TreeThreads { get; set; }
         public int FileThreads { get; set; }
+        public int DatabaseThreads { get; set; }
         public int MaxFileQueue { get; set; } = 200000;
         public int MaxTreeQueue { get; set; } = 0;
         public int MaxShareQueue { get; set; } = 0;
+        public int MaxIndexQueue { get; set; } = 10000;
 
         // Logging Options
         public bool LogToFile { get; set; } = false;
@@ -59,6 +61,17 @@ namespace SnaffCore.Config
         public bool DomainUserRules { get; set; } = false;
         public int DomainUserMinLen { get; set; } = 6;
         public DomainUserNamesFormat[] DomainUserNameFormats { get; set; } = new DomainUserNamesFormat[] { DomainUserNamesFormat.sAMAccountName };
+
+        // Database Options
+        public bool IndexShares { get; set; } = false;
+        public bool IndexFiles { get; set; } = false;
+        public string DatabaseHost { get; set; } = string.Empty;
+        public int DatabasePort { get; set; } = 0;
+        public string DatabaseUsername { get; set; } = string.Empty;
+        public string DatabasePassword { get; set; } = string.Empty;
+        public string DatabaseEngine { get; set; } = string.Empty;
+        public string DatabaseSchema { get; set; } = string.Empty;
+
 
         // passwords to try on certs that require one
         public List<string> CertPasswords = new List<string>()

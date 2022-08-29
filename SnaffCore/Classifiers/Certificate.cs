@@ -148,7 +148,7 @@ namespace SnaffCore.Classifiers
                 int end = pemString.IndexOf(footer, start) - start;
                 return Convert.FromBase64String(pemString.Substring(start, end));
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 
             }

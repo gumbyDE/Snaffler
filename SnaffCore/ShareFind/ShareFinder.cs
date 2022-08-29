@@ -121,6 +121,7 @@ namespace SnaffCore.ShareFind
                         ShareResult shareResult = new ShareResult()
                         {
                             Listable = true,
+                            Computer = computer,
                             SharePath = shareName,
                             ShareComment = hostShareInfo.shi1_remark.ToString()
                         };
@@ -203,8 +204,14 @@ namespace SnaffCore.ShareFind
                                     triage = Triage.Yellow;
                                 }
                                 */
+
+                                // if indexing share, add this share to the database buffer
+                                if (MyOptions.IndexShares)
+                                {
+                                    SnaffCon.GetDatabaseIndexer().AddShare(shareResult);
+                                }
                             }
-                            catch (System.UnauthorizedAccessException e)
+                            catch (System.UnauthorizedAccessException)
                             {
                                 Mq.Error("Failed to get permissions on " + shareResult.SharePath);
                             }

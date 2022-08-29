@@ -19,6 +19,13 @@ namespace SnaffCore.FileScan
             try
             {
                 FileInfo fileInfo = new FileInfo(file);
+
+                // if indexed files should be store to database, add them to the buffer
+                if (MyOptions.IndexFiles)
+                {
+                    SnaffCon.GetDatabaseIndexer().AddFile(fileInfo);
+                }
+
                 // send the file to all the classifiers.
                 foreach (ClassifierRule classifier in MyOptions.FileClassifiers)
                 {

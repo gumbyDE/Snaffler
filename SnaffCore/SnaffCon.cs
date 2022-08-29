@@ -15,6 +15,7 @@ using System.Threading;
 using System.Timers;
 using static SnaffCore.Config.Options;
 using Timer = System.Timers.Timer;
+using SnaffCore.Database;
 
 namespace SnaffCore
 {
@@ -27,10 +28,12 @@ namespace SnaffCore
         private static BlockingStaticTaskScheduler ShareTaskScheduler;
         private static BlockingStaticTaskScheduler TreeTaskScheduler;
         private static BlockingStaticTaskScheduler FileTaskScheduler;
-        
+        private static BlockingStaticTaskScheduler DatabaseTaskScheduler;
+
         private static ShareFinder ShareFinder;
         private static TreeWalker TreeWalker;
         private static FileScanner FileScanner;
+        private static DatabaseIndexer DatabaseIndexer;
 
         private DateTime StartTime { get; set; }
 
@@ -42,14 +45,17 @@ namespace SnaffCore
             int shareThreads = MyOptions.ShareThreads;
             int treeThreads = MyOptions.TreeThreads;
             int fileThreads = MyOptions.FileThreads;
+            int databaseThreads = MyOptions.DatabaseThreads;
 
             ShareTaskScheduler = new BlockingStaticTaskScheduler(shareThreads, MyOptions.MaxShareQueue);
             TreeTaskScheduler = new BlockingStaticTaskScheduler(treeThreads, MyOptions.MaxTreeQueue);
             FileTaskScheduler = new BlockingStaticTaskScheduler(fileThreads, MyOptions.MaxFileQueue);
+            DatabaseTaskScheduler = new BlockingStaticTaskScheduler(databaseThreads, MyOptions.MaxIndexQueue);
 
             FileScanner = new FileScanner();
             TreeWalker = new TreeWalker();
             ShareFinder = new ShareFinder();
+            DatabaseIndexer = new DatabaseIndexer();
         }
 
         public static ShareFinder GetShareFinder()
@@ -64,6 +70,10 @@ namespace SnaffCore
         {
             return FileScanner;
         }
+        public static DatabaseIndexer GetDatabaseIndexer()
+        {
+            return DatabaseIndexer;
+        }
         public static BlockingStaticTaskScheduler GetShareTaskScheduler()
         {
             return ShareTaskScheduler;
@@ -75,6 +85,10 @@ namespace SnaffCore
         public static BlockingStaticTaskScheduler GetFileTaskScheduler()
         {
             return FileTaskScheduler;
+        }
+        public static BlockingStaticTaskScheduler GetDatabaseTaskScheduler()
+        {
+            return DatabaseTaskScheduler;
         }
 
         public void Execute()
@@ -363,19 +377,15 @@ namespace SnaffCore
             TaskCounters shareTaskCounters = ShareTaskScheduler.Scheduler.GetTaskCounters();
             TaskCounters treeTaskCounters = TreeTaskScheduler.Scheduler.GetTaskCounters();
             TaskCounters fileTaskCounters = FileTaskScheduler.Scheduler.GetTaskCounters();
+            TaskCounters databaseTaskCounters = DatabaseTaskScheduler.Scheduler.GetTaskCounters();
 
             StringBuilder updateText = new StringBuilder("Status Update: \n");
-            updateText.Append("ShareFinder Tasks Completed: " + shareTaskCounters.CompletedTasks + "\n");
-            updateText.Append("ShareFinder Tasks Remaining: " + shareTaskCounters.CurrentTasksRemaining + "\n");
-            updateText.Append("ShareFinder Tasks Running: " + shareTaskCounters.CurrentTasksRunning + "\n");
-            updateText.Append("TreeWalker Tasks Completed: " + treeTaskCounters.CompletedTasks + "\n");
-            updateText.Append("TreeWalker Tasks Remaining: " + treeTaskCounters.CurrentTasksRemaining + "\n");
-            updateText.Append("TreeWalker Tasks Running: " + treeTaskCounters.CurrentTasksRunning + "\n");
-            updateText.Append("FileScanner Tasks Completed: " + fileTaskCounters.CompletedTasks + "\n");
-            updateText.Append("FileScanner Tasks Remaining: " + fileTaskCounters.CurrentTasksRemaining + "\n");
-            updateText.Append("FileScanner Tasks Running: " + fileTaskCounters.CurrentTasksRunning + "\n");
-            updateText.Append(memorynumber + " RAM in use." + "\n");
-            updateText.Append("\n");
+            updateText.AppendFormat("ShareFinder Tasks (Completed/Remaining/Running): {0}/{1}/{2}" + Environment.NewLine, shareTaskCounters.CompletedTasks, shareTaskCounters.CurrentTasksRemaining, shareTaskCounters.CurrentTasksRunning);
+            updateText.AppendFormat("TreeWalker Tasks (Completed/Remaining/Running): {0}/{1}/{2}" + Environment.NewLine, treeTaskCounters.CompletedTasks, treeTaskCounters.CurrentTasksRemaining, treeTaskCounters.CurrentTasksRunning);
+            updateText.AppendFormat("FileScanner Tasks (Completed/Remaining/Running): {0}/{1}/{2}" + Environment.NewLine, fileTaskCounters.CompletedTasks, fileTaskCounters.CurrentTasksRemaining, fileTaskCounters.CurrentTasksRunning);
+            updateText.AppendFormat("DatabaseIndexer Tasks (Completed/Remaining/Running): {0}/{1}/{2}" + Environment.NewLine, databaseTaskCounters.CompletedTasks, databaseTaskCounters.CurrentTasksRemaining, databaseTaskCounters.CurrentTasksRunning);
+            updateText.AppendLine(memorynumber + " RAM in use.");
+            updateText.AppendLine();
 
             // if all share tasks have finished, reduce max parallelism to 0 and reassign capacity to file scheduler.
             if (ShareTaskScheduler.Done() && (shareTaskCounters.MaxParallelism >= 1))
@@ -411,9 +421,14 @@ namespace SnaffCore
                 }
             }
 
-            updateText.Append("Max ShareFinder Threads: " + ShareTaskScheduler.Scheduler._maxDegreeOfParallelism + "\n");
-            updateText.Append("Max TreeWalker Threads: " + TreeTaskScheduler.Scheduler._maxDegreeOfParallelism + "\n");
-            updateText.Append("Max FileScanner Threads: " + FileTaskScheduler.Scheduler._maxDegreeOfParallelism + "\n");
+            // flush the database in case it hasn't been done yet
+            DatabaseIndexer.Flush();
+
+            updateText.AppendFormat("Max Threads (ShareFinder/TreeWalker/FileScanner/DatabaseIndexer): {0}/{1}/{2}/{3}" + Environment.NewLine,
+                ShareTaskScheduler.Scheduler._maxDegreeOfParallelism,
+                TreeTaskScheduler.Scheduler._maxDegreeOfParallelism,
+                FileTaskScheduler.Scheduler._maxDegreeOfParallelism,
+                DatabaseTaskScheduler.Scheduler._maxDegreeOfParallelism);
 
             DateTime now = DateTime.Now;
             TimeSpan runSpan = now.Subtract(StartTime);
@@ -422,7 +437,7 @@ namespace SnaffCore
 
             Mq.Info(updateText.ToString());
 
-            if (FileTaskScheduler.Done() && ShareTaskScheduler.Done() && TreeTaskScheduler.Done())
+            if (FileTaskScheduler.Done() && ShareTaskScheduler.Done() && TreeTaskScheduler.Done() && DatabaseTaskScheduler.Done())
             {
                 waitHandle.Set();
             }

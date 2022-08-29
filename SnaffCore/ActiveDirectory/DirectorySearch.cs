@@ -126,7 +126,7 @@ namespace SnaffCore.ActiveDirectory.LDAP
                     {
                         searchResponse = (SearchResponse)connection.SendRequest(searchRequest);
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         //Console.WriteLine(ldapFilter);
                         //Console.WriteLine("\nUnexpected exception occured:\n\t{0}: {1}",

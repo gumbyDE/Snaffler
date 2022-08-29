@@ -11,6 +11,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Linq;
 
 namespace Snaffler
 {
@@ -173,12 +174,26 @@ namespace Snaffler
                     }
                 }
 
+                // everything regarding indexing of files into a database
+                if (!string.IsNullOrWhiteSpace(Options.DatabaseEngine) && !string.IsNullOrWhiteSpace(Options.DatabaseHost))
+                {
+                    string[] dbKnownEngines = new string[] { "MSSQL" };
+                    Options.DatabaseEngine = Options.DatabaseEngine.ToUpper().Trim();
+
+                    if (!dbKnownEngines.Contains(Options.DatabaseEngine))
+                    { 
+                        Mq.Error("Database engine " + Options.DatabaseEngine + " unknown, indexing has been disabled");
+                        Mq.Error("Currently supported engines: " + string.Join(", ", dbKnownEngines));
+                        Options.DatabaseEngine = null;
+                    }
+                }
+
                 // Apply config           
                 LogManager.Configuration = nlogConfig;
 
                 //-------------------------------------------
 
-                if (Options.Snaffle && (Options.SnafflePath.Length > 4))
+                if (Options.Snaffle && !string.IsNullOrWhiteSpace(Options.SnafflePath) && Options.SnafflePath.Length > 4)
                 {
                     Directory.CreateDirectory(Options.SnafflePath);
                 }
