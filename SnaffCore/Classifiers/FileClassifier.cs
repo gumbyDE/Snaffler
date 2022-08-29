@@ -404,8 +404,6 @@ namespace SnaffCore.Classifiers
             //string cleanedPath = Path.GetFullPath(sourcePath.Replace(':', '.').Replace('$', '.'));
 
             // make the dir exist
-            string snaffleFilePath = Path.Combine(snafflePath, cleanedPath);
-
             string localFilePath = Path.Combine(snafflePath, cleanedPath);
             string localDirectoryPath = Path.GetDirectoryName(localFilePath);
             Directory.CreateDirectory(localDirectoryPath);
