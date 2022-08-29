@@ -91,14 +91,13 @@ namespace SnaffCore.ShareFind
                         case "SMS_DP":
                         case "SMSPKG":
                         case "SCCMCONTENTLIB":
-                            if (MyOptions.ScanSCCM == true)
+                            // don't scan SCCM if the user told us so
+                            if (MyOptions.ScanSCCM == false)
                             {
-                                //  Same logic as SYSVOL above
-                                MyOptions.ScanNetlogon = false;
+                                matched = true;
                                 break;
                             }
-                            matched = true;
-                            break;
+                            goto default;
                         default:
                             // classify them
                             foreach (ClassifierRule classifier in MyOptions.ShareClassifiers)
