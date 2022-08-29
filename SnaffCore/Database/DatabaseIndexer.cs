@@ -44,6 +44,21 @@ namespace SnaffCore.Database
             _database.AddFile(file);
         }
 
+        public void FlushSync()
+        {
+            Mq.Degub("Flushing database sync");
+
+            try
+            {
+                _database.Flush();
+            }
+            catch (Exception e)
+            {
+                Mq.Error("Exception in DatabaseIndexer Flush task");
+                Mq.Error(e.ToString());
+            }
+        }
+
         public void Flush()
         {
             Mq.Degub("Flushing database.");

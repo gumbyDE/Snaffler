@@ -421,9 +421,6 @@ namespace SnaffCore
                 }
             }
 
-            // flush the database in case it hasn't been done yet
-            DatabaseIndexer.Flush();
-
             updateText.AppendFormat("Max Threads (ShareFinder/TreeWalker/FileScanner/DatabaseIndexer): {0}/{1}/{2}/{3}" + Environment.NewLine,
                 ShareTaskScheduler.Scheduler._maxDegreeOfParallelism,
                 TreeTaskScheduler.Scheduler._maxDegreeOfParallelism,
@@ -437,8 +434,15 @@ namespace SnaffCore
 
             Mq.Info(updateText.ToString());
 
-            if (FileTaskScheduler.Done() && ShareTaskScheduler.Done() && TreeTaskScheduler.Done() && DatabaseTaskScheduler.Done())
+            if (FileTaskScheduler.Done() && ShareTaskScheduler.Done() && TreeTaskScheduler.Done())
             {
+                // everything is done, wait for the Database to flush one last time
+                DatabaseIndexer.Flush();
+                while (!DatabaseTaskScheduler.Done())
+                {
+                    Thread.Sleep(100);
+                }
+                
                 waitHandle.Set();
             }
             //}

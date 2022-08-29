@@ -22,11 +22,13 @@ namespace SnaffCore.Database
         ";
 
         private const string _sqlInsertShare = @"
-
+            INSERT INTO shares (computer, path, comment)
+            VALUES (@computer, @path, @comment)
         ";
 
         private const string _sqlInsertFile = @"
-
+            INSERT INTO files (fullname, filename, size, extension)
+            VALUES (@fullname, @filename, @size, @extension)
         ";
 
         private readonly string _connectionString;
@@ -45,24 +47,28 @@ namespace SnaffCore.Database
                     connectionStringBuilder.Append(",");
                     connectionStringBuilder.Append(MyOptions.DatabasePort);
                 }
+                connectionStringBuilder.Append(';');
             }
 
             if (!string.IsNullOrWhiteSpace(MyOptions.DatabaseUsername))
             {
                 connectionStringBuilder.Append("User Id=");
                 connectionStringBuilder.Append(MyOptions.DatabaseUsername);
+                connectionStringBuilder.Append(';');
             }
 
             if (!string.IsNullOrWhiteSpace(MyOptions.DatabaseUsername))
             {
                 connectionStringBuilder.Append("Password=");
                 connectionStringBuilder.Append(MyOptions.DatabasePassword);
+                connectionStringBuilder.Append(';');
             }
 
             if (!string.IsNullOrWhiteSpace(MyOptions.DatabaseSchema))
             {
                 connectionStringBuilder.Append("Database=");
                 connectionStringBuilder.Append(MyOptions.DatabaseSchema);
+                connectionStringBuilder.Append(';');
             }
 
             _connectionString = connectionStringBuilder.ToString();
@@ -107,12 +113,11 @@ namespace SnaffCore.Database
 
                         command.CommandText = _sqlInsertFile;
 
-                        command.Parameters.Add(new SqlParameter("@fullname", currentFile.FullName));
-                        command.Parameters.Add(new SqlParameter("@filename", currentFile.Name));
-                        command.Parameters.Add(new SqlParameter("@size", currentFile.Length));
-                        command.Parameters.Add(new SqlParameter("@extension", currentFile.Extension));
+                        command.Parameters.AddWithValue("@fullname", currentFile.FullName);
+                        command.Parameters.AddWithValue("@filename", currentFile.Name);
+                        command.Parameters.AddWithValue("@size", currentFile.Length);
+                        command.Parameters.AddWithValue("@extension", currentFile.Extension);
 
-                        command.Prepare();
                         command.ExecuteNonQuery();
                     }
                     transaction.Commit();
@@ -155,13 +160,12 @@ namespace SnaffCore.Database
                     while (_shareBuffer.TryTake(out currentShare))
                     {
 
-                        command.CommandText = _sqlInsertFile;
+                        command.CommandText = _sqlInsertShare;
 
-                        command.Parameters.Add(new SqlParameter("@computer", currentShare.Computer));
-                        command.Parameters.Add(new SqlParameter("@path", currentShare.SharePath));
-                        command.Parameters.Add(new SqlParameter("@comment", currentShare.ShareComment));
+                        command.Parameters.AddWithValue("@computer", currentShare.Computer);
+                        command.Parameters.AddWithValue("@path", currentShare.SharePath);
+                        command.Parameters.AddWithValue("@comment", currentShare.ShareComment);
 
-                        command.Prepare();
                         command.ExecuteNonQuery();
                     }
                     transaction.Commit();
