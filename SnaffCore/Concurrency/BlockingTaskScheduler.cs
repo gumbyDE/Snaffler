@@ -56,7 +56,10 @@ namespace SnaffCore.Concurrency
                     if (_maxBacklog != 0)
                     {
                         if (Scheduler.GetTaskCounters().CurrentTasksQueued >= _maxBacklog)
+                        {
+                            Thread.Sleep(100);
                             continue;
+                        }
                     }
 
                     // okay, let's add the thing
