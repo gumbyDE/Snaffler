@@ -36,6 +36,7 @@ namespace SnaffCore
         private static DatabaseIndexer DatabaseIndexer;
 
         private DateTime StartTime { get; set; }
+        private bool _initialized = false;
 
         public SnaffCon(Options options)
         {
@@ -342,6 +343,7 @@ namespace SnaffCore
                     }
                 });
             }
+            _initialized = true;
             Mq.Info("Created all sharefinder tasks.");
         }
 
@@ -379,85 +381,88 @@ namespace SnaffCore
             //lock (StatusObjectLocker)
             //{
             // get memory usage for status update
-            string memorynumber;
-            using (Process proc = Process.GetCurrentProcess())
+            if (_initialized)
             {
-                long memorySize64 = proc.PrivateMemorySize64;
-                memorynumber = BytesToString(memorySize64);
-            }
-
-            TaskCounters shareTaskCounters = ShareTaskScheduler.Scheduler.GetTaskCounters();
-            TaskCounters treeTaskCounters = TreeTaskScheduler.Scheduler.GetTaskCounters();
-            TaskCounters fileTaskCounters = FileTaskScheduler.Scheduler.GetTaskCounters();
-            TaskCounters databaseTaskCounters = DatabaseTaskScheduler.Scheduler.GetTaskCounters();
-
-            StringBuilder updateText = new StringBuilder("Status Update: \n");
-            updateText.AppendFormat("ShareFinder Tasks (Completed/Remaining/Running): {0}/{1}/{2}" + Environment.NewLine, shareTaskCounters.CompletedTasks, shareTaskCounters.CurrentTasksRemaining, shareTaskCounters.CurrentTasksRunning);
-            updateText.AppendFormat("TreeWalker Tasks (Completed/Remaining/Running): {0}/{1}/{2}" + Environment.NewLine, treeTaskCounters.CompletedTasks, treeTaskCounters.CurrentTasksRemaining, treeTaskCounters.CurrentTasksRunning);
-            updateText.AppendFormat("FileScanner Tasks (Completed/Remaining/Running): {0}/{1}/{2}" + Environment.NewLine, fileTaskCounters.CompletedTasks, fileTaskCounters.CurrentTasksRemaining, fileTaskCounters.CurrentTasksRunning);
-            updateText.AppendFormat("DatabaseIndexer Tasks (Completed/Remaining/Running): {0}/{1}/{2}" + Environment.NewLine, databaseTaskCounters.CompletedTasks, databaseTaskCounters.CurrentTasksRemaining, databaseTaskCounters.CurrentTasksRunning);
-            updateText.AppendLine(memorynumber + " RAM in use.");
-            updateText.AppendLine();
-
-            // if all share tasks have finished, reduce max parallelism to 0 and reassign capacity to file scheduler.
-            if (ShareTaskScheduler.Done() && (shareTaskCounters.MaxParallelism >= 1))
-            {
-                // get the current number of sharetask threads
-                int transferVal = shareTaskCounters.MaxParallelism;
-                // set it to zero
-                ShareTaskScheduler.Scheduler._maxDegreeOfParallelism = 0;
-                // add 1 to the other
-                FileTaskScheduler.Scheduler._maxDegreeOfParallelism = FileTaskScheduler.Scheduler._maxDegreeOfParallelism + transferVal;
-                updateText.Append("ShareScanner queue finished, rebalancing workload." + "\n");
-            }
-
-            // flush the database periodically
-            DatabaseIndexer.Flush();
-
-            // do other rebalancing
-            if (fileTaskCounters.CurrentTasksQueued <= (MyOptions.MaxFileQueue / 20))
-            {
-                // but only if one side isn't already at minimum
-                if (FileTaskScheduler.Scheduler._maxDegreeOfParallelism > 1)
+                string memorynumber;
+                using (Process proc = Process.GetCurrentProcess())
                 {
-                    updateText.Append("Insufficient FileScanner queue size, rebalancing workload." + "\n");
-                    --FileTaskScheduler.Scheduler._maxDegreeOfParallelism;
-                    ++TreeTaskScheduler.Scheduler._maxDegreeOfParallelism;
+                    long memorySize64 = proc.PrivateMemorySize64;
+                    memorynumber = BytesToString(memorySize64);
                 }
-            }
-            if (fileTaskCounters.CurrentTasksQueued == MyOptions.MaxFileQueue)
-            {
-                if (TreeTaskScheduler.Scheduler._maxDegreeOfParallelism > 1)
+
+                TaskCounters shareTaskCounters = ShareTaskScheduler.Scheduler.GetTaskCounters();
+                TaskCounters treeTaskCounters = TreeTaskScheduler.Scheduler.GetTaskCounters();
+                TaskCounters fileTaskCounters = FileTaskScheduler.Scheduler.GetTaskCounters();
+                TaskCounters databaseTaskCounters = DatabaseTaskScheduler.Scheduler.GetTaskCounters();
+
+                StringBuilder updateText = new StringBuilder("Status Update: \n");
+                updateText.AppendFormat("ShareFinder Tasks (Completed/Remaining/Running): {0}/{1}/{2}" + Environment.NewLine, shareTaskCounters.CompletedTasks, shareTaskCounters.CurrentTasksRemaining, shareTaskCounters.CurrentTasksRunning);
+                updateText.AppendFormat("TreeWalker Tasks (Completed/Remaining/Running): {0}/{1}/{2}" + Environment.NewLine, treeTaskCounters.CompletedTasks, treeTaskCounters.CurrentTasksRemaining, treeTaskCounters.CurrentTasksRunning);
+                updateText.AppendFormat("FileScanner Tasks (Completed/Remaining/Running): {0}/{1}/{2}" + Environment.NewLine, fileTaskCounters.CompletedTasks, fileTaskCounters.CurrentTasksRemaining, fileTaskCounters.CurrentTasksRunning);
+                updateText.AppendFormat("DatabaseIndexer Tasks (Completed/Remaining/Running): {0}/{1}/{2}" + Environment.NewLine, databaseTaskCounters.CompletedTasks, databaseTaskCounters.CurrentTasksRemaining, databaseTaskCounters.CurrentTasksRunning);
+                updateText.AppendLine(memorynumber + " RAM in use.");
+                updateText.AppendLine();
+
+                // if all share tasks have finished, reduce max parallelism to 0 and reassign capacity to file scheduler.
+                if (ShareTaskScheduler.Done() && (shareTaskCounters.MaxParallelism >= 1))
                 {
-                    updateText.Append("Max FileScanner queue size reached, rebalancing workload." + "\n");
-                    ++FileTaskScheduler.Scheduler._maxDegreeOfParallelism;
-                    --TreeTaskScheduler.Scheduler._maxDegreeOfParallelism;
+                    // get the current number of sharetask threads
+                    int transferVal = shareTaskCounters.MaxParallelism;
+                    // set it to zero
+                    ShareTaskScheduler.Scheduler._maxDegreeOfParallelism = 0;
+                    // add 1 to the other
+                    FileTaskScheduler.Scheduler._maxDegreeOfParallelism = FileTaskScheduler.Scheduler._maxDegreeOfParallelism + transferVal;
+                    updateText.Append("ShareScanner queue finished, rebalancing workload." + "\n");
                 }
-            }
 
-            updateText.AppendFormat("Max Threads (ShareFinder/TreeWalker/FileScanner/DatabaseIndexer): {0}/{1}/{2}/{3}" + Environment.NewLine,
-                ShareTaskScheduler.Scheduler._maxDegreeOfParallelism,
-                TreeTaskScheduler.Scheduler._maxDegreeOfParallelism,
-                FileTaskScheduler.Scheduler._maxDegreeOfParallelism,
-                DatabaseTaskScheduler.Scheduler._maxDegreeOfParallelism);
-
-            DateTime now = DateTime.Now;
-            TimeSpan runSpan = now.Subtract(StartTime);
-
-            updateText.Append("Been Snafflin' for " + runSpan + " and we ain't done yet..." + "\n");
-
-            Mq.Info(updateText.ToString());
-
-            if (FileTaskScheduler.Done() && ShareTaskScheduler.Done() && TreeTaskScheduler.Done())
-            {
-                // everything is done, wait for the Database to flush one last time
+                // flush the database periodically
                 DatabaseIndexer.Flush();
-                while (!DatabaseTaskScheduler.Done())
+
+                // do other rebalancing
+                if (fileTaskCounters.CurrentTasksQueued <= (MyOptions.MaxFileQueue / 20))
                 {
-                    Thread.Sleep(100);
+                    // but only if one side isn't already at minimum
+                    if (FileTaskScheduler.Scheduler._maxDegreeOfParallelism > 1)
+                    {
+                        updateText.Append("Insufficient FileScanner queue size, rebalancing workload." + "\n");
+                        --FileTaskScheduler.Scheduler._maxDegreeOfParallelism;
+                        ++TreeTaskScheduler.Scheduler._maxDegreeOfParallelism;
+                    }
                 }
-                
-                waitHandle.Set();
+                if (fileTaskCounters.CurrentTasksQueued == MyOptions.MaxFileQueue)
+                {
+                    if (TreeTaskScheduler.Scheduler._maxDegreeOfParallelism > 1)
+                    {
+                        updateText.Append("Max FileScanner queue size reached, rebalancing workload." + "\n");
+                        ++FileTaskScheduler.Scheduler._maxDegreeOfParallelism;
+                        --TreeTaskScheduler.Scheduler._maxDegreeOfParallelism;
+                    }
+                }
+
+                updateText.AppendFormat("Max Threads (ShareFinder/TreeWalker/FileScanner/DatabaseIndexer): {0}/{1}/{2}/{3}" + Environment.NewLine,
+                    ShareTaskScheduler.Scheduler._maxDegreeOfParallelism,
+                    TreeTaskScheduler.Scheduler._maxDegreeOfParallelism,
+                    FileTaskScheduler.Scheduler._maxDegreeOfParallelism,
+                    DatabaseTaskScheduler.Scheduler._maxDegreeOfParallelism);
+
+                DateTime now = DateTime.Now;
+                TimeSpan runSpan = now.Subtract(StartTime);
+
+                updateText.Append("Been Snafflin' for " + runSpan + " and we ain't done yet..." + "\n");
+
+                Mq.Info(updateText.ToString());
+
+                if (FileTaskScheduler.Done() && ShareTaskScheduler.Done() && TreeTaskScheduler.Done())
+                {
+                    // everything is done, wait for the Database to flush one last time
+                    DatabaseIndexer.Flush();
+                    while (!DatabaseTaskScheduler.Done())
+                    {
+                        Thread.Sleep(100);
+                    }
+
+                    waitHandle.Set();
+                }
             }
             //}
         }
