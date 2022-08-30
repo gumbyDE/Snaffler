@@ -138,12 +138,21 @@ namespace SnaffCore.Database
                 {
                     while (_fileBuffer.TryTake(out currentFile))
                     {
-                        command.Parameters.AddWithValue("@fullname", currentFile.FullName);
-                        command.Parameters.AddWithValue("@filename", currentFile.Name);
-                        command.Parameters.AddWithValue("@size", currentFile.Length);
-                        command.Parameters.AddWithValue("@extension", currentFile.Extension);
+                        try
+                        {
+                            command.Parameters.AddWithValue("@fullname", currentFile.FullName);
+                            command.Parameters.AddWithValue("@filename", currentFile.Name);
+                            command.Parameters.AddWithValue("@size", currentFile.Length);
+                            command.Parameters.AddWithValue("@extension", currentFile.Extension);
 
-                        command.ExecuteNonQuery();
+                            command.ExecuteNonQuery();
+                        }
+                        catch (IOException)
+                        {
+                            // we could not get more info about the file, for example the file size
+                            // might be that the file is no longer available to use (deleted/unshared)
+                        }
+                        
                         command.Parameters.Clear();
                     }
                     transaction.Commit();
