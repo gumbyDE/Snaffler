@@ -102,10 +102,22 @@ namespace SnaffCore
             statusUpdateTimer.Elapsed += TimedStatusUpdate;
             statusUpdateTimer.Start();
 
+            if (!string.IsNullOrWhiteSpace(MyOptions.DatabaseEngine))
+            {
+                if (DatabaseIndexer.CheckConnection())
+                {
+                    Mq.Info("Database connectivity has been verified, indexing to database.");
+                }
+                else
+                {
+                    Mq.Error("Could not connect to database, indexing has been disabled.");
+                    MyOptions.DatabaseEngine = null;
+                }
+            }
 
             // If we want to hunt for user IDs, we need data from the running user's domain.
             // Future - walk trusts
-            if ( MyOptions.DomainUserRules)
+            if (MyOptions.DomainUserRules)
             {
                 DomainUserDiscovery();
             }

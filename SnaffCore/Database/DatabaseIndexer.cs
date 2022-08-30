@@ -1,5 +1,6 @@
 ﻿using SnaffCore.Classifiers;
 using SnaffCore.Concurrency;
+using SnaffCore.Config;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -34,16 +35,38 @@ namespace SnaffCore.Database
             }
         }
 
+        /// <summary>
+        /// Check if a connection can be made to the database with the configuration given by the user.
+        /// </summary>
+        /// <returns></returns>
+        public bool CheckConnection()
+        {
+            return _database.CheckConnection();
+        }
+
+        /// <summary>
+        /// Adds a share for indexing.
+        /// </summary>
+        /// <param name="share"></param>
         public void AddShare(ShareResult share)
         {
             _database.AddShare(share);
         }
 
+
+        /// <summary>
+        /// Adds a file for indexing.
+        /// </summary>
+        /// <param name="file"></param>
         public void AddFile(FileInfo file)
         {
             _database.AddFile(file);
         }
 
+        /// <summary>
+        /// Saves the content of the internal buffer to the databases.
+        /// Blocks until the data has been saved.
+        /// </summary>
         public void FlushSync()
         {
             Mq.Degub("Flushing database sync");
@@ -59,6 +82,10 @@ namespace SnaffCore.Database
             }
         }
 
+        /// <summary>
+        /// Saves the content of the internal buffer to the database.
+        /// Uses the DatabaseTaskScheduler to create a new task.
+        /// </summary>
         public void Flush()
         {
             Mq.Degub("Flushing database.");

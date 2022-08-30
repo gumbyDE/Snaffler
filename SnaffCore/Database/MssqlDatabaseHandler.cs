@@ -81,22 +81,6 @@ namespace SnaffCore.Database
             }
 
             _connectionString = connectionStringBuilder.ToString();
-
-            InitializeDatabase();
-        }
-
-        private void InitializeDatabase()
-        {
-            using (SqlConnection connection = new SqlConnection(_connectionString))
-            {
-                connection.Open();
-                SqlCommand commandShares = connection.CreateCommand();
-                SqlCommand commandFiles = connection.CreateCommand();
-                commandShares.CommandText = _sqlCreateSharesTable;
-                commandFiles.CommandText = _sqlCreateFilesTable;
-                commandShares.ExecuteNonQuery();
-                commandFiles.ExecuteNonQuery();
-            }
         }
 
         public override bool CheckConnection()
@@ -106,13 +90,19 @@ namespace SnaffCore.Database
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
                     connection.Open();
+                    SqlCommand commandShares = connection.CreateCommand();
+                    SqlCommand commandFiles = connection.CreateCommand();
+                    commandShares.CommandText = _sqlCreateSharesTable;
+                    commandFiles.CommandText = _sqlCreateFilesTable;
+                    commandShares.ExecuteNonQuery();
+                    commandFiles.ExecuteNonQuery();
                 }
                 return true;
             }
             catch (Exception e)
             {
-                Mq.Error("Could not connect to database");
-                Mq.Error(e.ToString());
+                Mq.Error("Got an error while trying to setup database: " + e.Message);
+                Mq.Degub(e.ToString());
                 return false;
             }
         }

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Linq;
+using SnaffCore.Database;
 
 namespace Snaffler
 {
