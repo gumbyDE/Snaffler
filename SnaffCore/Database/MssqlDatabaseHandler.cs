@@ -128,20 +128,19 @@ namespace SnaffCore.Database
 
                 command.Connection = connection;
                 command.Transaction = transaction;
+                command.CommandText = _sqlInsertFile;
 
                 try
                 {
                     while (_fileBuffer.TryTake(out currentFile))
                     {
-
-                        command.CommandText = _sqlInsertFile;
-
                         command.Parameters.AddWithValue("@fullname", currentFile.FullName);
                         command.Parameters.AddWithValue("@filename", currentFile.Name);
                         command.Parameters.AddWithValue("@size", currentFile.Length);
                         command.Parameters.AddWithValue("@extension", currentFile.Extension);
 
                         command.ExecuteNonQuery();
+                        command.Parameters.Clear();
                     }
                     transaction.Commit();
                     Mq.Degub("Commited transaction");
@@ -177,14 +176,12 @@ namespace SnaffCore.Database
 
                 command.Connection = connection;
                 command.Transaction = transaction;
+                command.CommandText = _sqlInsertShare;
 
                 try
                 {
                     while (_shareBuffer.TryTake(out currentShare))
                     {
-
-                        command.CommandText = _sqlInsertShare;
-
                         string shareName = currentShare.SharePath
                             .TrimStart('\\')
                             .Substring(currentShare.Computer.Length + 1);
@@ -193,6 +190,7 @@ namespace SnaffCore.Database
                         command.Parameters.AddWithValue("@comment", currentShare.ShareComment);
 
                         command.ExecuteNonQuery();
+                        command.Parameters.Clear();
                     }
                     transaction.Commit();
                     Mq.Degub("Commited transaction");
