@@ -411,8 +411,10 @@ namespace SnaffCore
                 updateText.Append("ShareScanner queue finished, rebalancing workload." + "\n");
             }
 
-            // do other rebalancing
+            // flush the database periodically
+            DatabaseIndexer.Flush();
 
+            // do other rebalancing
             if (fileTaskCounters.CurrentTasksQueued <= (MyOptions.MaxFileQueue / 20))
             {
                 // but only if one side isn't already at minimum

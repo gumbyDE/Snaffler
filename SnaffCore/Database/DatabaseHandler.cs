@@ -28,19 +28,11 @@ namespace SnaffCore.Database
         public void AddShare(ShareResult share)
         {
             _shareBuffer.Add(share);
-            if (_shareBuffer.Count + _fileBuffer.Count >= _maxBufferSize)
-            {
-                Flush();
-            }
         }
 
         public void AddFile(FileInfo file)
         {
             _fileBuffer.Add(file);
-            if (_shareBuffer.Count + _fileBuffer.Count >= _maxBufferSize)
-            {
-                Flush();
-            }
         }
 
         /// <summary>

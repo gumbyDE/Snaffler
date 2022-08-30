@@ -22,6 +22,13 @@ namespace SnaffCore.Database
             END;
         ";
 
+        /*
+         * Don't create indexes right away, this kills the performance of the mssql server
+                CREATE UNIQUE NONCLUSTERED INDEX ix_files_fullname ON files (fullname ASC)
+                WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = ON, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY];
+                CREATE NONCLUSTERED INDEX ix_files_filename ON files (filename ASC)
+                WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY];
+        */
         private const string _sqlCreateFilesTable = @"
             IF OBJECT_ID(N'dbo.files', N'U') IS NULL
             BEGIN
@@ -31,10 +38,7 @@ namespace SnaffCore.Database
 	                size bigint NULL,
 	                extension varchar(100) NULL
                 );
-                CREATE UNIQUE NONCLUSTERED INDEX ix_files_fullname ON files (fullname ASC)
-                WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = ON, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY];
-                CREATE NONCLUSTERED INDEX ix_files_filename ON files (filename ASC)
-                WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY];
+
             END;
         ";
 
