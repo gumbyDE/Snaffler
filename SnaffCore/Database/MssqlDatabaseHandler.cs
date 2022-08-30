@@ -136,8 +136,10 @@ namespace SnaffCore.Database
 
                 try
                 {
+                    int counter = 0;
                     while (_fileBuffer.TryTake(out currentFile))
                     {
+                        counter++;
                         try
                         {
                             command.Parameters.AddWithValue("@fullname", currentFile.FullName);
@@ -154,6 +156,9 @@ namespace SnaffCore.Database
                         }
                         
                         command.Parameters.Clear();
+
+                        if (counter % _maxBufferSize == 0)
+                            transaction.Commit();
                     }
                     transaction.Commit();
                     Mq.Degub("Commited transaction");
@@ -193,6 +198,7 @@ namespace SnaffCore.Database
 
                 try
                 {
+                    int counter = 0;
                     while (_shareBuffer.TryTake(out currentShare))
                     {
                         string shareName = currentShare.SharePath
@@ -204,6 +210,10 @@ namespace SnaffCore.Database
 
                         command.ExecuteNonQuery();
                         command.Parameters.Clear();
+                        counter++;
+
+                        if (counter % _maxBufferSize == 0)
+                            transaction.Commit();
                     }
                     transaction.Commit();
                     Mq.Degub("Commited transaction");

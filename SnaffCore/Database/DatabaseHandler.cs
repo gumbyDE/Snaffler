@@ -17,7 +17,7 @@ namespace SnaffCore.Database
         protected ConcurrentBag<ShareResult> _shareBuffer = new ConcurrentBag<ShareResult>();
         protected ConcurrentBag<FileInfo> _fileBuffer = new ConcurrentBag<FileInfo>();
 
-        private readonly int _maxBufferSize;
+        protected readonly int _maxBufferSize;
 
         public DatabaseHandler(int maxBufferSize)
         {
