@@ -96,6 +96,9 @@ namespace SnaffCore.Database
                 try
                 {
                     _database.Flush();
+                    // we just flushed the database, but only a specific amount of data is handled by one flush call
+                    // if our queue is still full we need to create a new task
+                    if (_database.NeedsFlushing()) Flush();
                 }
                 catch (Exception e)
                 {

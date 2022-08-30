@@ -128,13 +128,19 @@ namespace SnaffCore.Database
                 connection.Open();
 
                 SqlCommand command = connection.CreateCommand();
+                SqlTransaction transaction = connection.BeginTransaction();
+
                 command.Connection = connection;
+                command.Transaction = transaction;
                 command.CommandText = _sqlInsertFile;
+                command.CommandTimeout = 900;
 
                 try
                 {
+                    int counter = 0;
                     while (_fileBuffer.TryTake(out currentFile))
                     {
+                        counter++;
                         try
                         {
                             command.Parameters.AddWithValue("@fullname", currentFile.FullName);
@@ -149,14 +155,29 @@ namespace SnaffCore.Database
                             // we could not get more info about the file, for example the file size
                             // might be that the file is no longer available to use (deleted/unshared)
                         }
-                        
+
                         command.Parameters.Clear();
+
+                        if (counter % _maxBufferSize == 0)
+                            break;
                     }
+                    transaction.Commit();
+                    Mq.Degub("Commited transaction");
                 }
-                catch (Exception e)
+                catch (Exception ex1)
                 {
                     Mq.Error("Could not insert files into database, have to rollback transaction");
-                    Mq.Error(e.ToString());
+                    Mq.Error(ex1.ToString());
+
+                    try
+                    {
+                        transaction.Rollback();
+                    }
+                    catch (Exception ex2)
+                    {
+                        Mq.Error("Could not rollback transaction");
+                        Mq.Error(ex2.ToString());
+                    }
                 }
             }
         }
@@ -170,11 +191,16 @@ namespace SnaffCore.Database
                 connection.Open();
 
                 SqlCommand command = connection.CreateCommand();
+                SqlTransaction transaction = connection.BeginTransaction();
+
                 command.Connection = connection;
+                command.Transaction = transaction;
                 command.CommandText = _sqlInsertShare;
+                command.CommandTimeout = 900;
 
                 try
                 {
+                    int counter = 0;
                     while (_shareBuffer.TryTake(out currentShare))
                     {
                         string shareName = currentShare.SharePath
@@ -186,12 +212,28 @@ namespace SnaffCore.Database
 
                         command.ExecuteNonQuery();
                         command.Parameters.Clear();
+                        counter++;
+
+                        if (counter % _maxBufferSize == 0)
+                            break;
                     }
+                    transaction.Commit();
+                    Mq.Degub("Commited transaction");
                 }
-                catch (Exception e)
+                catch (Exception ex1)
                 {
                     Mq.Error("Could not insert shares into database, have to rollback transaction");
-                    Mq.Error(e.ToString());
+                    Mq.Error(ex1.ToString());
+
+                    try
+                    {
+                        transaction.Rollback();
+                    }
+                    catch (Exception ex2)
+                    {
+                        Mq.Error("Could not rollback transaction");
+                        Mq.Error(ex2.ToString());
+                    }
                 }
             }
         }

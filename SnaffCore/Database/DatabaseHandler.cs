@@ -45,6 +45,18 @@ namespace SnaffCore.Database
             InsertFiles();
         }
 
+        public int GetQueueSize()
+        {
+            return _shareBuffer.Count + _fileBuffer.Count;
+        }
+        public int GetMaxBufferSize()
+        {
+            return _maxBufferSize;
+        }
+        public bool NeedsFlushing()
+        {
+            return GetQueueSize() > GetMaxBufferSize();
+        }
         public abstract bool SetupConnection();
 
         protected abstract void InsertShares();
