@@ -83,7 +83,7 @@ namespace SnaffCore.Database
             _connectionString = connectionStringBuilder.ToString();
         }
 
-        public override bool CheckConnection()
+        public override bool SetupConnection()
         {
             try
             {

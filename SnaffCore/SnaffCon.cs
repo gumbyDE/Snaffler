@@ -104,7 +104,7 @@ namespace SnaffCore
 
             if (!string.IsNullOrWhiteSpace(MyOptions.DatabaseEngine))
             {
-                if (DatabaseIndexer.CheckConnection())
+                if (DatabaseIndexer.SetupConnection())
                 {
                     Mq.Info("Database connectivity has been verified, indexing to database.");
                 }

@@ -53,7 +53,7 @@ namespace SnaffCore.Database
             InsertFiles();
         }
 
-        public abstract bool CheckConnection();
+        public abstract bool SetupConnection();
 
         protected abstract void InsertShares();
         protected abstract void InsertFiles();

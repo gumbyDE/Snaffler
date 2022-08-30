@@ -37,11 +37,12 @@ namespace SnaffCore.Database
 
         /// <summary>
         /// Check if a connection can be made to the database with the configuration given by the user.
+        /// If connectivity works, setup the database (create tables and indexes).
         /// </summary>
         /// <returns></returns>
-        public bool CheckConnection()
+        public bool SetupConnection()
         {
-            return _database.CheckConnection();
+            return _database.SetupConnection();
         }
 
         /// <summary>
