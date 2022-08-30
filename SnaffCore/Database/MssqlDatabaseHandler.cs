@@ -28,7 +28,7 @@ namespace SnaffCore.Database
                 CREATE TABLE files (
 	                fullname varchar(1000) NOT NULL,
 	                filename varchar(500) NOT NULL,
-	                size int NULL,
+	                size bigint NULL,
 	                extension varchar(100) NULL
                 );
                 CREATE UNIQUE NONCLUSTERED INDEX ix_files_fullname ON files (fullname ASC)
