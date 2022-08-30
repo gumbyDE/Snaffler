@@ -145,7 +145,9 @@ namespace SnaffCore.Database
                         {
                             command.Parameters.AddWithValue("@fullname", currentFile.FullName);
                             command.Parameters.AddWithValue("@filename", currentFile.Name);
-                            command.Parameters.AddWithValue("@size", currentFile.Length);
+                            // disabled storing the size of the file for now as this is a complete performance killer
+                            //command.Parameters.AddWithValue("@size", currentFile.Length);
+                            command.Parameters.AddWithValue("@size", 0);
                             command.Parameters.AddWithValue("@extension", currentFile.Extension);
 
                             command.ExecuteNonQuery();
