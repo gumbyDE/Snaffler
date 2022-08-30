@@ -13,21 +13,29 @@ namespace SnaffCore.Database
     {
         private const string _sqlCreateSharesTable = @"
             IF OBJECT_ID(N'dbo.shares', N'U') IS NULL
-            CREATE TABLE shares (
-	            computer varchar(500) NULL,
-	            sharename varchar(500) NULL,
-	            comment varchar(200) NULL
-            );
+            BEGIN
+                CREATE TABLE shares (
+	                computer varchar(250) NOT NULL,
+	                sharename varchar(100) NOT NULL,
+	                comment varchar(1000) NULL
+                );
+            END;
         ";
 
         private const string _sqlCreateFilesTable = @"
             IF OBJECT_ID(N'dbo.files', N'U') IS NULL
-            CREATE TABLE files (
-	            fullname varchar(500) NULL,
-	            filename varchar(500) NULL,
-	            size int NULL,
-	            extension varchar(100) NULL
-            );
+            BEGIN
+                CREATE TABLE files (
+	                fullname varchar(1000) NOT NULL,
+	                filename varchar(500) NOT NULL,
+	                size int NULL,
+	                extension varchar(100) NULL
+                );
+                CREATE UNIQUE NONCLUSTERED INDEX ix_files_fullname ON files (fullname ASC)
+                WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = ON, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY];
+                CREATE NONCLUSTERED INDEX ix_files_filename ON files (filename ASC)
+                WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY];
+            END;
         ";
 
         private const string _sqlInsertShare = @"
