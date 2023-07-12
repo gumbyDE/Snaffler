@@ -45,7 +45,7 @@ namespace SnaffCore.Classifiers
         {
             string sourcePath = fileInfo.FullName;
             // clean it up and normalise it a bit
-            string cleanedPath = sourcePath.Replace(':', '.').Replace('$', '.').Replace("\\\\", "\\");
+            string cleanedPath = sourcePath.Replace(':', '.').Replace('$', '.').TrimStart('\\');
             //string cleanedPath = Path.GetFullPath(sourcePath.Replace(':', '.').Replace('$', '.'));
             // make the dir exist
             string snaffleFilePath = Path.Combine(snafflePath, cleanedPath);
