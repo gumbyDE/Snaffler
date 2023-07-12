@@ -48,8 +48,19 @@ namespace SnaffCore.ShareFind
                 {
                     bool matched = false;
 
-                    // SYSVOL and NETLOGON shares are replicated so they have special logic - do not use Classifiers for these
-                    switch (hostShareInfo.shi1_netname.ToUpper())
+                    string shareNamePrepared = hostShareInfo.shi1_netname.ToUpper().TrimEnd('$');
+                    Dictionary<string, bool> scannedOnceSCCMShares = new Dictionary<string, bool>();
+
+                    // SCCM allows adding a secondary content store that will be shared as SCCMContentLib<drive Letter>$, for example SCCMContentLibF$
+                    if (shareNamePrepared.StartsWith("SCCMCONTENTLIB") && shareNamePrepared.Length == ("SCCMCONTENTLIB".Length + 1))
+                        shareNamePrepared = "SCCMCONTENTLIB";
+                    // same with SMSPKG
+                    if (shareNamePrepared.StartsWith("SMSPKG") && shareNamePrepared.Length == ("SMSPKG".Length + 1))
+                        shareNamePrepared = "SMSPKG";
+
+
+                    // SYSVOL, NETLOGON and SCCM shares are replicated so they have special logic - do not use Classifiers for these
+                    switch (shareNamePrepared)
                     {    
                         case "SYSVOL":
                             if (MyOptions.ScanSysvol == true)
@@ -68,6 +79,22 @@ namespace SnaffCore.ShareFind
                                 MyOptions.ScanNetlogon = false;
                                 break;
                             }
+                            matched = true;
+                            break;
+                        // Folder names taken from https://social.technet.microsoft.com/Forums/en-US/e8b97f7b-e4c6-4c7d-9767-2bd3d811f835/what-smspkgc-is-for?forum=configmanagergeneral
+                        // and https://social.microsoft.com/Forums/windows/ar-SA/68d79ef3-4ac8-461b-9289-2fd8dd24776b/required-server-shares-and-permissons-for-sccm?forum=configmanagergeneral
+                        case "REMINST":
+                        case "SMSSETUP":
+                        case "SMSSIG":
+                        case "SMS_DP":
+                        case "SMSPKG":
+                        case "SCCMCONTENTLIB":
+                            if (MyOptions.ScanSCCM == true && !scannedOnceSCCMShares.ContainsKey(shareNamePrepared))
+                            {
+                                scannedOnceSCCMShares.Add(shareNamePrepared, true);
+                                break;
+                            }
+
                             matched = true;
                             break;
                         default:
